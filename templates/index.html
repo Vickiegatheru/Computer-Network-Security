@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; padding: 40px; background: #f4f4f4;">
+    <h2>Method 4: Hashing & Encryption</h2>
+    
+    <div style="background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px;">
+        <h3>Sender (Source A)</h3>
+        <form method="POST">
+            <input name="msg" placeholder="Enter message" style="width: 300px;">
+            <button type="submit">Encrypt & Hash</button>
+        </form>
+        {% if enc %}
+        <p><strong>Resulting Ciphertext:</strong><br>
+        <code style="word-break: break-all; color: blue;">{{ enc }}</code></p>
+        {% endif %}
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px;">
+        <h3>Receiver (Destination B)</h3>
+        <form method="POST">
+            <input name="cip" placeholder="Paste Ciphertext" style="width: 300px;">
+            <button type="submit">Decrypt & Verify</button>
+        </form>
+        {% if dec %}
+        <p><strong>Message:</strong> {{ dec }}</p>
+        <p><strong>Verified:</strong> {{ "✅ YES" if status else "❌ NO" }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>
