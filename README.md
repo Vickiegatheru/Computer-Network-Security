@@ -1,14 +1,14 @@
 # Hashing and Message Authentication
 
-This project is a functional implementation of **Authenticated Encryption** based on the "Method 4" logic from the Cryptography and Network Security curriculum. It demonstrates how to combine Hashing, Secret Salting, and Symmetric Encryption to ensure data **Confidentiality**, **Integrity**, and **Authenticity**.
+This project is a functional implementation of **Authenticated Encryption** based on the logic from the Cryptography and Network Security curriculum. It demonstrates how to combine Hashing, Secret Salting, and Symmetric Encryption to ensure data **Confidentiality**, **Integrity**, and **Authenticity**.
 
 ## 🚀 Features
-* **Method 4 Logic:** Implements the $E(K, [M || H(M || S)])$ pipeline.
+* **Logic:** Implements the $E(K, [M || H(M || S)])$ pipeline.
 * **Cybersecurity Dashboard:** A clean, terminal-style web interface built with Flask.
 * **Real-time Process Logs:** Displays the step-by-step mathematical transformations (Hashing -> Concatenation -> Encryption).
 * **Tamper Detection:** Automatically detects if a single bit of the ciphertext has been altered and triggers a security alert.
 
-## 🛠 How it Works (Method 4)
+## 🛠 How it Works
 1.  **Authentication:** The message ($M$) is concatenated with a shared secret ($S$) and hashed ($H$) using SHA-256.
 2.  **Encapsulation:** The resulting hash is appended to the original plaintext message.
 3.  **Confidentiality:** The entire package is encrypted using **AES-128 (CBC Mode)** with a symmetric key ($K$).
