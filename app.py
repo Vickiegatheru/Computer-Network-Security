@@ -5,13 +5,19 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    res_enc, res_dec, valid = None, None, None
+    enc_data = {}
+    dec_data = {}
+    
     if request.method == 'POST':
-        if 'msg' in request.form: 
-            res_enc = encrypt_m4(request.form['msg'])
-        if 'cip' in request.form: 
-            res_dec, valid = decrypt_m4(request.form['cip'])
-    return render_template('index.html', enc=res_enc, dec=res_dec, status=valid)
+        if 'msg' in request.form:
+            ct, steps = encrypt_m4(request.form['msg'])
+            enc_data = {'ct': ct, 'steps': steps}
+        
+        if 'cip' in request.form:
+            msg, valid, steps = decrypt_m4(request.form['cip'])
+            dec_data = {'msg': msg, 'valid': valid, 'steps': steps}
+            
+    return render_template('index.html', enc=enc_data, dec=dec_data)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
