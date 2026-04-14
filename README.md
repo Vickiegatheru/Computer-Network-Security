@@ -1,4 +1,4 @@
-# Method (d): Hashing and Message Authentication
+# Hashing and Message Authentication
 
 This project is a functional implementation of **Authenticated Encryption** based on the "Method 4" logic from the Cryptography and Network Security curriculum. It demonstrates how to combine Hashing, Secret Salting, and Symmetric Encryption to ensure data **Confidentiality**, **Integrity**, and **Authenticity**.
 
