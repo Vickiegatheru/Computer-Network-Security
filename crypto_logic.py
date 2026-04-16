@@ -3,30 +3,31 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 
-# Shared Secret Keys
+# Shared Secrets (In a real app, these would be environment variables)
 K = b'1234567890123456' # 16-byte AES Key
-S = b'secret_salt_123'  # Secret 'S'
+S = b'secret_salt_123'  # Shared Secret 'S' for Hashing
 
 def encrypt_m4(message):
     steps = []
     m_bytes = message.encode()
     
-    # 1. H(M || S)
+    # 1. H(M || S) - Creating the HMAC-like signature
     h = hashlib.sha256(m_bytes + S).digest()
-    steps.append(f"Hashed message with secret S: {h.hex()[:20]}...")
+    steps.append(f"HASH GENERATED: SHA256(M + S) = {h.hex()[:16]}...")
     
-    # 2. [M || H]
+    # 2. [M || H] - Binding identity to data
     payload = m_bytes + h
-    steps.append("Concatenated Message and Hash.")
+    steps.append("BINDING: Message and Hash concatenated into single payload.")
     
-    # 3. E(K, Payload)
+    # 3. E(K, Payload) - Encrypting everything
     iv = os.urandom(16)
     padder = padding.PKCS7(128).padder()
     padded = padder.update(payload) + padder.finalize()
     
     cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
-    ct = cipher.encryptor().update(padded) + cipher.encryptor().finalize()
-    steps.append(f"Encrypted entire package with Key K (AES-CBC).")
+    encryptor = cipher.encryptor()
+    ct = encryptor.update(padded) + encryptor.finalize()
+    steps.append("ENCRYPTION: AES-128-CBC applied to [Message + Hash].")
     
     final_b64 = base64.b64encode(iv + ct).decode()
     return final_b64, steps
@@ -36,26 +37,29 @@ def decrypt_m4(b64_data):
     try:
         data = base64.b64decode(b64_data)
         iv, ct = data[:16], data[16:]
-        steps.append("Decoded Base64 and extracted IV.")
+        steps.append("DECODING: Base64 components extracted.")
         
-        # 1. D(K, ct)
+        # 1. D(K, ct) - Reveal M and H
         cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
-        pt_padded = cipher.decryptor().update(ct) + cipher.decryptor().finalize()
+        decryptor = cipher.decryptor()
+        pt_padded = decryptor.update(ct) + decryptor.finalize()
+        
         unpadder = padding.PKCS7(128).unpadder()
         pt = unpadder.update(pt_padded) + unpadder.finalize()
-        steps.append("Decryption successful.")
+        steps.append("DECRYPTION: AES layer stripped. Payload revealed.")
         
-        # 2. Split
-        m, h_rec = pt[:-32], pt[-32:]
-        steps.append(f"Extracted Hash: {h_rec.hex()[:20]}...")
+        # 2. Split Message and Hash (SHA256 is 32 bytes)
+        m, h_received = pt[:-32], pt[-32:]
         
         # 3. Re-Verify H(M || S)
-        h_calc = hashlib.sha256(m + S).digest()
-        if h_rec == h_calc:
-            steps.append("Verification: Hashes MATCH. Message is authentic.")
+        h_calculated = hashlib.sha256(m + S).digest()
+        steps.append(f"VERIFYING: Recalculated Hash vs Received Hash...")
+        
+        if h_received == h_calculated:
+            steps.append("SUCCESS: Hashes match. Integrity and Authenticity confirmed.")
             return m.decode(), True, steps
         
-        steps.append("Verification: Hashes DO NOT match! Tamper detected.")
-        return "ALERT: DATA TAMPERED", False, steps
+        steps.append("CRITICAL FAILURE: Hash mismatch! Data was altered.")
+        return "ALERT: TAMPERED DATA", False, steps
     except Exception as e:
-        return f"Error: {str(e)}", False, ["Process failed at decryption step."]
+        return "ERROR: INVALID CIPHERTEXT", False, ["Decryption failed: Package corrupted."]

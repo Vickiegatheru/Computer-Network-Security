@@ -9,10 +9,12 @@ def home():
     dec_data = {}
     
     if request.method == 'POST':
+        # Handle Encryption Request
         if 'msg' in request.form:
             ct, steps = encrypt_m4(request.form['msg'])
             enc_data = {'ct': ct, 'steps': steps}
         
+        # Handle Decryption Request
         if 'cip' in request.form:
             msg, valid, steps = decrypt_m4(request.form['cip'])
             dec_data = {'msg': msg, 'valid': valid, 'steps': steps}
@@ -20,4 +22,4 @@ def home():
     return render_template('index.html', enc=enc_data, dec=dec_data)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
