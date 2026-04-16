@@ -7,7 +7,7 @@ from cryptography.hazmat.backends import default_backend
 K = b'1234567890123456' # AES-128 Key
 S = b'secret_salt_123'  # Shared Secret 'S'
 
-def encrypt_m4(message):
+def encrypt_m4(message, tamper=False):
     steps = []
     m_bytes = message.encode()
     
@@ -22,11 +22,27 @@ def encrypt_m4(message):
     # 2. SHA-256 HASH GENERATION
     h_obj = hashlib.sha256(salted)
     h_digest = h_obj.digest()
-    steps.append({
-        'title': '2. SHA-256 MAC GENERATION',
-        'data': h_obj.hexdigest(),
-        'desc': "A 256-bit unique digital fingerprint is created. SHA-256 is used here for its high collision resistance and avalanche effect properties."
-    })
+    
+    # TAMPERED HASH (if tamper mode is enabled)
+    if tamper:
+        h_digest_display = h_digest[:-4] + b'\x00\x00\x00\x00'  # Corrupt last 4 bytes
+        steps.append({
+            'title': '2. SHA-256 MAC GENERATION',
+            'data': h_obj.hexdigest(),
+            'desc': "A 256-bit unique digital fingerprint is created. SHA-256 is used here for its high collision resistance and avalanche effect properties."
+        })
+        steps.append({
+            'title': '⚠️ HASH TAMPERING (SIMULATED ATTACK)',
+            'data': h_digest_display.hex(),
+            'desc': f"WARNING: The hash has been intentionally corrupted! Original: {h_digest.hex()[:16]}... | Tampered: {h_digest_display.hex()[:16]}... This simulates an attacker modifying the MAC tag."
+        })
+        h_digest = h_digest_display
+    else:
+        steps.append({
+            'title': '2. SHA-256 MAC GENERATION',
+            'data': h_obj.hexdigest(),
+            'desc': "A 256-bit unique digital fingerprint is created. SHA-256 is used here for its high collision resistance and avalanche effect properties."
+        })
     
     # 3. ENCAPSULATION [M || H]
     payload = m_bytes + h_digest

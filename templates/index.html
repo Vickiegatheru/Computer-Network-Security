@@ -34,7 +34,11 @@
         <div class="panel">
             <h3>[A] SENDER PIPELINE</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter message to encrypt..." style="width: 70%;" required>
+                <input name="msg" placeholder="Enter message to encrypt..." style="width: 55%;" required>
+                <select name="mode" style="width: 22%; background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; margin-top: 10px; margin-left: 10px;">
+                    <option value="normal">🔒 Normal Flow</option>
+                    <option value="tampered">⚠️ Tampered Hash</option>
+                </select>
                 <button type="submit">EXECUTE PIPELINE</button>
             </form>
 
@@ -61,6 +65,7 @@
             <form method="POST">
                 <input name="cip" placeholder="Paste Base64 package here..." style="width: 70%;" required>
                 {% if enc.msg %}<input type="hidden" name="orig_msg" value="{{ enc.msg }}">{% endif %}
+                {% if enc.msg %}<input type="hidden" name="orig_tamper" value="{{ request.form.get('mode', 'normal') }}">{% endif %}
                 <button type="submit">COMPARE & VERIFY</button>
             </form>
 

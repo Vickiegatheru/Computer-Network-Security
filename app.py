@@ -12,7 +12,8 @@ def home():
         if 'msg' in request.form:
             # Encryption request
             msg = request.form['msg']
-            ct, steps = encrypt_m4(msg)
+            mode = request.form.get('mode', 'normal')
+            ct, steps = encrypt_m4(msg, tamper=(mode == 'tampered'))
             enc_data = {'ct': ct, 'steps': steps, 'msg': msg}
         elif 'cip' in request.form:
             # Decryption request - also check if we have the original message to re-show encryption
@@ -21,7 +22,8 @@ def home():
             
             # If original message was sent via hidden field, re-encrypt to show sender pipeline
             if 'orig_msg' in request.form:
-                ct, enc_steps = encrypt_m4(request.form['orig_msg'])
+                tamper = request.form.get('orig_tamper', 'normal') == 'tampered'
+                ct, enc_steps = encrypt_m4(request.form['orig_msg'], tamper=tamper)
                 enc_data = {'ct': ct, 'steps': enc_steps, 'msg': request.form['orig_msg']}
     
     return render_template('index.html', enc=enc_data, dec=dec_data)
