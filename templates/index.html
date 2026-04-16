@@ -2,67 +2,91 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Method (d) Security Dashboard</title>
+    <title>Method (d) Security Deep-Dive</title>
     <style>
-        :root { --neon: #00ff41; --bg: #0a0a0a; --red: #ff3131; }
-        body { background: var(--bg); color: #ddd; font-family: 'Courier New', monospace; padding: 30px; }
-        .container { max-width: 900px; margin: auto; }
-        .panel { background: #111; border: 1px solid #333; padding: 25px; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        h3 { color: var(--neon); margin-top: 0; }
-        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; }
-        button:hover { background: var(--neon); color: black; cursor: pointer; font-weight: bold; }
+        :root { --neon: #00ff41; --bg: #050505; --accent: #003b11; }
+        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
         
-        /* Typewriter Animation */
-        .log-box { background: #000; border-left: 3px solid var(--neon); padding: 15px; margin: 20px 0; font-size: 0.85em; }
-        .tw-line { overflow: hidden; white-space: nowrap; border-right: 2px solid var(--neon); width: 0; animation: typing 1.5s steps(40, end) forwards, blink 0.8s infinite; margin-bottom: 8px; color: var(--neon); }
-        @keyframes typing { from { width: 0 } to { width: 100% } }
-        @keyframes blink { 50% { border-color: transparent } }
+        .panel { background: #0f0f0f; border: 1px solid #222; padding: 20px; margin-bottom: 20px; border-radius: 4px; }
+        h2, h3 { color: var(--neon); text-transform: uppercase; margin-top: 0; }
         
-        .delay-0 { animation-delay: 0s; }
-        .delay-1 { animation-delay: 1.5s; }
-        .delay-2 { animation-delay: 3s; }
-        .delay-3 { animation-delay: 4.5s; }
+        /* Grid Layout for Tech Details */
+        .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .tech-card { background: #1a1a1a; padding: 15px; border: 1px solid #333; font-size: 0.85em; }
+        .tech-card h4 { color: var(--neon); margin-top: 0; border-bottom: 1px solid var(--accent); padding-bottom: 5px; }
 
-        .res { border: 1px dashed var(--neon); padding: 15px; word-break: break-all; margin-top: 15px; color: var(--neon); background: rgba(0,255,65,0.02); }
-        .error { border-color: var(--red); color: var(--red); }
+        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; }
+        button:hover { background: var(--neon); color: #000; cursor: pointer; font-weight: bold; }
+        
+        .log-box { background: #000; border-left: 3px solid var(--neon); padding: 15px; margin: 15px 0; font-size: 0.85em; }
+        .tw-line { overflow: hidden; white-space: nowrap; border-right: 2px solid var(--neon); width: 0; animation: typing 1s steps(40, end) forwards; margin-bottom: 5px; color: var(--neon); }
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+
+        .formula { font-style: italic; color: #888; margin: 10px 0; }
+        .highlight { color: var(--neon); }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 style="color: var(--neon);">SYSTEM: AUTHENTICATED ENCRYPTION</h1>
-        <p style="color: #666;">Protocol: Method (d) - Hash-then-Encrypt</p>
+        <h2>Network Security Protocol: Method (d)</h2>
+        <p class="formula">Mathematical Primitive: <span class="highlight">C = E<sub>K</sub> [ M || H( M || S ) ]</span></p>
 
         <div class="panel">
-            <h3>[A] SENDER ENGINE</h3>
+            <h3>[A] SENDER PIPELINE</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter message..." style="width: 70%;" required>
-                <button type="submit">GENERATE PACKAGE</button>
+                <input name="msg" placeholder="Enter plaintext..." style="width: 70%;" required>
+                <button type="submit">PROCESS PACKAGE</button>
             </form>
+
             {% if enc.ct %}
             <div class="log-box">
                 {% for step in enc.steps %}
-                <div class="tw-line delay-{{ loop.index0 }}">> {{ step }}</div>
+                <div class="tw-line">> {{ step }}</div>
                 {% endfor %}
             </div>
-            <div class="res"><strong>FINAL CIPHERTEXT:</strong><br>{{ enc.ct }}</div>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>INTEGRITY: SHA-256</h4>
+                    <p>The hash is a 256-bit fixed-size digest. By including <b>Secret S</b>, we ensure <b>Authenticity</b>—only parties with S can generate this specific tag.</p>
+                </div>
+                <div class="tech-card">
+                    <h4>CONFIDENTIALITY: AES-CBC</h4>
+                    <p>AES-128 (Cipher Block Chaining) ensures that the message AND the hash are hidden. The random <b>IV</b> prevents pattern recognition attacks.</p>
+                </div>
+            </div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[B] RECEIVER ENGINE</h3>
+            <h3>[B] RECEIVER VERIFICATION</h3>
             <form method="POST">
                 <input name="cip" placeholder="Paste ciphertext..." style="width: 70%;" required>
                 <button type="submit">VERIFY & DECRYPT</button>
             </form>
+
             {% if dec.steps %}
             <div class="log-box">
                 {% for step in dec.steps %}
-                <div class="tw-line delay-{{ loop.index0 }}">> {{ step }}</div>
+                <div class="tw-line">> {{ step }}</div>
                 {% endfor %}
             </div>
-            <div class="res {{ 'error' if not dec.valid }}">
-                <strong>RESULT:</strong> {{ dec.msg }} <br>
-                <strong>INTEGRITY:</strong> {{ "AUTHENTICATED" if dec.valid else "COMPROMISED" }}
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>TAMPER PROTECTION</h4>
+                    <p>Status: <b class="highlight">{{ "VALID" if dec.valid else "COMPROMISED" }}</b></p>
+                    <p>The system re-computes H(M+S). If an attacker flipped even one bit, the hashes will fail to match, triggering an integrity alert.</p>
+                </div>
+                <div class="tech-card">
+                    <h4>PRIMITIVE SUMMARY</h4>
+                    <ul>
+                        <li>Mode: AES-128-CBC</li>
+                        <li>Hash: SHA-256</li>
+                        <li>Type: MtE (MAC-then-Encrypt)</li>
+                    </ul>
+                </div>
             </div>
             {% endif %}
         </div>
