@@ -113,15 +113,16 @@
         alert("Ciphertext copied! Now paste it in the section below.");
     }
 
-    // Handle receiver verification form submission without page refresh
+    // Handle receiver verification form with AJAX
     document.addEventListener('DOMContentLoaded', function() {
-        const receiverForm = document.querySelector('form[action=""], form:has(input[name="cip"])');
+        const forms = document.querySelectorAll('form');
+        const receiverForm = Array.from(forms).find(f => f.querySelector('input[name="cip"]'));
+        
         if (receiverForm) {
             receiverForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
                 const formData = new FormData(this);
-                const scrollPos = window.scrollY;
                 
                 fetch(window.location.href, {
                     method: 'POST',
@@ -129,18 +130,23 @@
                 })
                 .then(response => response.text())
                 .then(html => {
-                    // Parse the response and update only the receiver section
                     const parser = new DOMParser();
                     const newDoc = parser.parseFromString(html, 'text/html');
                     
-                    // Replace the entire page content with new content
-                    document.documentElement.innerHTML = newDoc.documentElement.innerHTML;
+                    // Replace the entire page to update everything
+                    document.open();
+                    document.write(newDoc.documentElement.innerHTML);
+                    document.close();
                     
-                    // Restore scroll position
-                    window.scrollY = scrollPos;
-                    setTimeout(() => window.scrollTo(0, scrollPos), 0);
-                })
-                .catch(error => console.error('Error:', error));
+                    // Scroll to receiver section
+                    setTimeout(() => {
+                        const receiverSection = document.querySelector('h3');
+                        const allH3 = document.querySelectorAll('h3');
+                        if (allH3.length >= 2) {
+                            allH3[1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 300);
+                });
             });
         }
     });
