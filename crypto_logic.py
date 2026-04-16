@@ -68,5 +68,5 @@ def decrypt_m4(b64_data):
             {'title': 'CALCULATED HASH', 'data': h_calc.hex(), 'desc': 'The hash re-computed from the decrypted message and secret salt S.'}
         ]
         return m.decode(), (h_received == h_calc), steps
-    except:
-        return "ERROR", False, [{'title': 'CRITICAL', 'data': 'FAIL', 'desc': 'Package corrupted or invalid ciphertext.'}]
+    except Exception as e:
+        return f"ERROR: {str(e)}", False, [{'title': 'CRITICAL', 'data': 'FAIL', 'desc': f'Package corrupted or invalid ciphertext: {str(e)}'}]
