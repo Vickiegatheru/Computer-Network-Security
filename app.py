@@ -7,14 +7,15 @@ app = Flask(__name__)
 def home():
     enc_data = {}
     dec_data = {}
+    selected_mode = 'normal'
     
     if request.method == 'POST':
         if 'msg' in request.form:
             # Encryption request
             msg = request.form['msg']
-            mode = request.form.get('mode', 'normal')
-            ct, steps = encrypt_m4(msg, tamper=(mode == 'tampered'))
-            enc_data = {'ct': ct, 'steps': steps, 'msg': msg}
+            selected_mode = request.form.get('mode', 'normal')
+            ct, steps = encrypt_m4(msg, tamper=(selected_mode == 'tampered'))
+            enc_data = {'ct': ct, 'steps': steps, 'msg': msg, 'mode': selected_mode}
         elif 'cip' in request.form:
             # Decryption request - also check if we have the original message to re-show encryption
             msg, valid, steps = decrypt_m4(request.form['cip'])
@@ -24,7 +25,7 @@ def home():
             if 'orig_msg' in request.form:
                 tamper = request.form.get('orig_tamper', 'normal') == 'tampered'
                 ct, enc_steps = encrypt_m4(request.form['orig_msg'], tamper=tamper)
-                enc_data = {'ct': ct, 'steps': enc_steps, 'msg': request.form['orig_msg']}
+                enc_data = {'ct': ct, 'steps': enc_steps, 'msg': request.form['orig_msg'], 'mode': request.form.get('orig_tamper', 'normal')}
     
     return render_template('index.html', enc=enc_data, dec=dec_data)
 

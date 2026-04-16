@@ -65,7 +65,7 @@
             <form method="POST">
                 <input name="cip" placeholder="Paste Base64 package here..." style="width: 70%;" required>
                 {% if enc.msg %}<input type="hidden" name="orig_msg" value="{{ enc.msg }}">{% endif %}
-                {% if enc.msg %}<input type="hidden" name="orig_tamper" value="{{ request.form.get('mode', 'normal') }}">{% endif %}
+                {% if enc.mode %}<input type="hidden" name="orig_tamper" value="{{ enc.mode }}">{% endif %}
                 <button type="submit">COMPARE & VERIFY</button>
             </form>
 
