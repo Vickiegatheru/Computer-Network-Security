@@ -1,22 +1,28 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request
 from crypto_logic import encrypt_m4, decrypt_m4
 
 app = Flask(__name__)
-app.secret_key = 'dev_key_secure'
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    enc_data = session.get('enc_data', {})
+    enc_data = {}
     dec_data = {}
     
     if request.method == 'POST':
         if 'msg' in request.form:
-            ct, steps = encrypt_m4(request.form['msg'])
-            enc_data = {'ct': ct, 'steps': steps}
-            session['enc_data'] = enc_data
+            # Encryption request
+            msg = request.form['msg']
+            ct, steps = encrypt_m4(msg)
+            enc_data = {'ct': ct, 'steps': steps, 'msg': msg}
         elif 'cip' in request.form:
+            # Decryption request - also check if we have the original message to re-show encryption
             msg, valid, steps = decrypt_m4(request.form['cip'])
             dec_data = {'msg': msg, 'valid': valid, 'steps': steps}
+            
+            # If original message was sent via hidden field, re-encrypt to show sender pipeline
+            if 'orig_msg' in request.form:
+                ct, enc_steps = encrypt_m4(request.form['orig_msg'])
+                enc_data = {'ct': ct, 'steps': enc_steps, 'msg': request.form['orig_msg']}
     
     return render_template('index.html', enc=enc_data, dec=dec_data)
 

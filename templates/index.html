@@ -60,6 +60,7 @@
             <h3>[B] RECEIVER VERIFICATION</h3>
             <form method="POST">
                 <input name="cip" placeholder="Paste Base64 package here..." style="width: 70%;" required>
+                {% if enc.msg %}<input type="hidden" name="orig_msg" value="{{ enc.msg }}">{% endif %}
                 <button type="submit">COMPARE & VERIFY</button>
             </form>
 
