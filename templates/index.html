@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Method (d) Advanced Protocol Analysis</title>
     <style>
-        :root { --neon: #00ff41; --bg: #050505; --gray: #999; }
-        body { background: var(--bg); color: #ddd; font-family: 'Courier New', monospace; padding: 30px; line-height: 1.6; }
+        :root { --neon: #00ff41; --bg: #050505; --gray: #999; --alert: #ff3131; }
+        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 25px; line-height: 1.6; }
         .container { max-width: 1100px; margin: auto; }
         .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 30px; border-radius: 4px; }
         
@@ -17,21 +17,23 @@
         .step-block { margin-bottom: 25px; }
         .label { color: var(--neon); font-weight: bold; font-size: 1.1em; display: block; }
         .hex-data { background: #111; color: white; padding: 10px; display: block; border: 1px solid #222; margin: 8px 0; word-break: break-all; font-size: 0.9em; }
-        .tech-desc { color: var(--gray); font-size: 0.9em; padding-left: 5px; border-left: 1px solid #444; }
+        .tech-desc { color: var(--gray); font-size: 0.95em; border-top: 1px solid #222; padding-top: 5px; }
 
         .output-box { border: 1px dashed var(--neon); padding: 20px; color: var(--neon); background: rgba(0,255,65,0.03); margin-top: 20px; }
-        .alert { border-color: #ff3131; color: #ff3131; }
+        .output-box.fail { border-color: var(--alert); color: var(--alert); }
+        .copy-btn { float: right; padding: 5px 10px; font-size: 0.8em; margin-top: -5px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Method (d) Cryptographic Dashboard</h1>
+        <p style="color: var(--gray);">Standard: MAC-then-Encrypt | Formula: C = E<sub>K</sub> [ M || H( M || S ) ]</p>
 
         <div class="panel">
-            <h3>[A] SENDER PIPELINE (MAC-then-Encrypt)</h3>
+            <h3>[A] SENDER PIPELINE</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter plaintext message..." style="width: 70%;" required>
-                <button type="submit">EXECUTE METHOD (D)</button>
+                <input name="msg" placeholder="Enter plaintext to encrypt..." style="width: 70%;" required>
+                <button type="submit">PROCESS PACKAGE</button>
             </form>
 
             {% if enc.steps %}
@@ -40,21 +42,24 @@
                 <div class="step-block">
                     <span class="label">> {{ s.label }}</span>
                     <code class="hex-data">{{ s.data }}</code>
-                    <p class="tech-desc"><b>Technical Analysis:</b> {{ s.tech }}</p>
+                    <p class="tech-desc"><b>Logic:</b> {{ s.tech }}</p>
                 </div>
                 {% endfor %}
             </div>
             <div class="output-box">
-                <strong>SECURE BASE64 PACKAGE:</strong><br>{{ enc.ct }}
+                <button class="copy-btn" onclick="copyCipher()">📋 COPY FOR RECEIVER</button>
+                <strong>FINAL SECURE PACKAGE (BASE64):</strong><br>
+                <code id="cipherText">{{ enc.ct }}</code>
             </div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[B] RECEIVER VERIFICATION (Decapsulation)</h3>
+            <h3>[B] RECEIVER VERIFICATION</h3>
+            <p style="color: var(--gray); font-size: 0.9em; margin-bottom: 10px;">Paste the Base64 Package from above to decrypt and check integrity.</p>
             <form method="POST">
-                <input name="cip" placeholder="Paste Base64 package..." style="width: 70%;" required>
-                <button type="submit">VERIFY INTEGRITY</button>
+                <input name="cip" placeholder="Paste Base64 ciphertext here..." style="width: 70%;" required>
+                <button type="submit">VERIFY & DECRYPT</button>
             </form>
 
             {% if dec.steps %}
@@ -67,12 +72,20 @@
                 </div>
                 {% endfor %}
             </div>
-            <div class="output-box {{ 'alert' if not dec.valid }}">
+            <div class="output-box {{ 'fail' if not dec.valid }}">
                 <strong>DECRYPTED MESSAGE:</strong> {{ dec.msg }} <br>
                 <strong>STATUS:</strong> {{ "AUTHENTICATED - Integrity Verified ✅" if dec.valid else "CRITICAL - Data Tampered ❌" }}
             </div>
             {% endif %}
         </div>
     </div>
+
+    <script>
+    function copyCipher() {
+        const text = document.getElementById('cipherText').innerText;
+        navigator.clipboard.writeText(text);
+        alert("Ciphertext copied! Now paste it into the Receiver section.");
+    }
+    </script>
 </body>
 </html>
