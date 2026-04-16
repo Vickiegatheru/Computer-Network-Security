@@ -65,10 +65,30 @@ def decrypt_m4(b64_data):
         m, h_received = pt[:-32], pt[-32:]
         h_calc = hashlib.sha256(m + S).digest()
         
+        is_valid = h_received == h_calc
+        
         steps = [
-            {'title': 'RECEIVED HASH', 'data': h_received.hex(), 'desc': 'The 32-byte integrity tag extracted from the decrypted envelope.'},
-            {'title': 'CALCULATED HASH', 'data': h_calc.hex(), 'desc': 'The hash re-computed from the decrypted message and secret salt S.'}
+            {'title': 'RECEIVED HASH (from ciphertext)', 'data': h_received.hex(), 'desc': 'The 32-byte integrity tag extracted from the decrypted envelope.'},
+            {'title': 'CALCULATED HASH (recomputed)', 'data': h_calc.hex(), 'desc': 'The hash re-computed from the decrypted message and secret salt S.'},
+            {
+                'title': 'HASH COMPARISON & VERIFICATION',
+                'data': 'MATCH ✅' if is_valid else 'MISMATCH ❌',
+                'desc': (
+                    'Both hashes are identical! The message has not been tampered with during transmission. '
+                    'MAC verification passed: authenticity and integrity are confirmed.' if is_valid
+                    else 'The hashes do NOT match! This indicates the message was corrupted, tampered with, or decrypted with wrong key/salt. '
+                    'The package is COMPROMISED and cannot be trusted.'
+                )
+            }
         ]
-        return m.decode(), (h_received == h_calc), steps
+        return m.decode(), is_valid, steps
     except Exception as e:
-        return f"ERROR: {str(e)}", False, [{'title': 'CRITICAL', 'data': 'FAIL', 'desc': f'Package corrupted or invalid ciphertext: {str(e)}'}]
+        return f"ERROR: {str(e)}", False, [
+            {'title': 'RECEIVED HASH', 'data': 'N/A', 'desc': 'Could not extract hash - decryption failed.'},
+            {'title': 'CALCULATED HASH', 'data': 'N/A', 'desc': 'Could not compute hash - decryption failed.'},
+            {
+                'title': 'HASH COMPARISON & VERIFICATION',
+                'data': 'ERROR ❌',
+                'desc': f'Package corrupted or invalid ciphertext: {str(e)}'
+            }
+        ]

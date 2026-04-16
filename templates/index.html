@@ -67,10 +67,10 @@
             {% if dec.steps %}
             <div style="margin-top: 25px;">
                 {% for s in dec.steps %}
-                <div class="step" style="border-color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }};">
+                <div class="step" style="border-color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }}; border-left-width: 5px;">
                     <span class="label" style="color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }};">> {{ s.title }}</span>
-                    <code class="hex-data">{{ s.data }}</code>
-                    <p class="tech-desc">{{ s.desc }}</p>
+                    <code class="hex-data" style="background: {{ '#0a3a0a' if dec.valid and 'MATCH' in s.data else '#3a0a0a' if not dec.valid and 'MISMATCH' in s.data else '#111' }}; color: {{ 'var(--neon)' if dec.valid and 'MATCH' in s.data else 'var(--alert)' if not dec.valid and 'MISMATCH' in s.data else 'white' }};">{{ s.data }}</code>
+                    <p class="tech-desc"><b>{{ 'ℹ️ ' if 'COMPARISON' not in s.title else '🔍 ' }}</b> {{ s.desc }}</p>
                 </div>
                 {% endfor %}
             </div>
