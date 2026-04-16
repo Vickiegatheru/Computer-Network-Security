@@ -3,73 +3,64 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 
-# Shared Keys (Must be identical on both ends)
-K = b'1234567890123456' # 16-byte AES Symmetric Key
-S = b'secret_salt_123'  # Shared Secret 'S' for Authenticated Hashing
+K = b'1234567890123456' # AES-128 Key
+S = b'secret_salt_123'  # Authentication Secret
 
 def encrypt_m4(message):
     steps = []
     m_bytes = message.encode()
     
-    # STEP 1: SALT CONCATENATION (M + S)
+    # 1. Salting
     salted = m_bytes + S
-    steps.append({
-        'label': '1. DATA SALTING (M || S)',
-        'data': salted.hex(),
-        'tech': f"The message '{message}' is combined with salt '{S.decode()}'. This ensures the hash is unique to this protocol."
-    })
+    steps.append({'label': 'SALTED DATA', 'data': salted.hex(), 'tech': 'Concatenated message with secret salt.'})
     
-    # STEP 2: SHA-256 HASH GENERATION
+    # 2. Hashing
     h_obj = hashlib.sha256(salted)
     h_digest = h_obj.digest()
-    steps.append({
-        'label': '2. SHA-256 AUTHENTICATION TAG',
-        'data': h_obj.hexdigest(),
-        'tech': "A 256-bit unique digital fingerprint is created. Changing 1 bit in the input flips ~128 bits here (Avalanche Effect)."
-    })
+    steps.append({'label': 'SHA-256 HASH', 'data': h_obj.hexdigest(), 'tech': 'Generated 32-byte integrity tag.'})
     
-    # STEP 3: ENCAPSULATION [M || H]
+    # 3. Encapsulation
     payload = m_bytes + h_digest
-    steps.append({
-        'label': '3. ENCAPSULATED PAYLOAD [M || H]',
-        'data': payload.hex(),
-        'tech': f"Following Method (d), we bind the message and hash. Payload: {len(m_bytes)}B message + 32B hash."
-    })
     
-    # STEP 4: AES-128-CBC ENCRYPTION
+    # 4. Encryption
     iv = os.urandom(16)
     padder = padding.PKCS7(128).padder()
     padded = padder.update(payload) + padder.finalize()
     cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
     ct = cipher.encryptor().update(padded) + cipher.encryptor().finalize()
     
-    steps.append({
-        'label': '4. AES-128-CBC CIPHERTEXT',
-        'data': f"IV: {iv.hex()} | CT: {ct.hex()}",
-        'tech': "The package is encrypted. CBC mode ensures identical plaintexts result in different ciphertexts via the random IV."
-    })
+    steps.append({'label': 'FINAL PAYLOAD', 'data': (iv + ct).hex(), 'tech': 'Encrypted using AES-CBC with random IV.'})
     
     return base64.b64encode(iv + ct).decode(), steps
 
 def decrypt_m4(b64_data):
     steps = []
     try:
+        # Clean the input string (remove spaces/newlines)
+        b64_data = b64_data.strip()
         data = base64.b64decode(b64_data)
+        
+        if len(data) < 48: # Min length: 16(IV) + 32(Hash) + Message
+            raise ValueError("Data too short")
+
         iv, ct = data[:16], data[16:]
         
         cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
-        pt_padded = cipher.decryptor().update(ct) + cipher.decryptor().finalize()
+        decryptor = cipher.decryptor()
+        pt_padded = decryptor.update(ct) + decryptor.finalize()
+        
         unpadder = padding.PKCS7(128).unpadder()
         pt = unpadder.update(pt_padded) + unpadder.finalize()
         
-        m_bytes, h_received = pt[:-32], pt[-32:]
-        h_calc = hashlib.sha256(m_bytes + S).digest()
+        m, h_received = pt[:-32], pt[-32:]
+        h_calc = hashlib.sha256(m + S).digest()
         
         steps = [
-            {'label': 'EXTRACTED HASH', 'data': h_received.hex(), 'tech': 'The 32-byte tag recovered from the decrypted envelope.'},
-            {'label': 'CALCULATED HASH', 'data': h_calc.hex(), 'tech': 'Re-computed locally using the decrypted message and secret salt S.'}
+            {'label': 'DECRYPTED HASH', 'data': h_received.hex(), 'tech': 'Extracted from envelope.'},
+            {'label': 'RE-COMPUTED HASH', 'data': h_calc.hex(), 'tech': 'Calculated from decrypted message.'}
         ]
         
-        return m_bytes.decode(), (h_received == h_calc), steps
+        return m.decode(), (h_received == h_calc), steps
     except Exception as e:
-        return "ERROR", False, [{'label': 'CRITICAL', 'data': 'FAIL', 'tech': 'Invalid Package or Tampered Ciphertext.'}]
+        # This will show specifically what went wrong in your UI logs
+        return "DECRYPTION FAILED", False, [{'label': 'ERROR', 'data': 'FAIL', 'tech': f'Technical Error: {str(e)}'}]
