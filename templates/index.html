@@ -2,67 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Method (d) Security Dashboard</title>
+    <title>Method (d) Advanced Protocol Analysis</title>
     <style>
         :root { --neon: #00ff41; --bg: #050505; --gray: #999; --alert: #ff3131; }
-        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 25px; line-height: 1.6; }
+        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 20px; line-height: 1.6; }
         .container { max-width: 1100px; margin: auto; }
         .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 30px; border-radius: 4px; }
+        
         h1, h3 { color: var(--neon); text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
         input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; margin-top: 10px; }
         button:hover { background: var(--neon); color: black; cursor: pointer; font-weight: bold; }
-        .analysis-box { margin: 20px 0; border-left: 3px solid var(--neon); padding-left: 20px; }
-        .step { margin-bottom: 30px; }
+
+        /* Animation */
+        .step { margin-bottom: 25px; border-left: 3px solid var(--neon); padding-left: 20px; animation: slideIn 0.5s ease-out forwards; opacity: 0; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
         .label { color: var(--neon); font-weight: bold; font-size: 1.1em; display: block; }
-        .hex-data { background: #111; color: white; padding: 12px; display: block; border: 1px solid #222; margin: 10px 0; word-break: break-all; font-size: 0.85em; }
-        .tech-desc { color: var(--gray); font-size: 0.95em; border-top: 1px solid #333; padding-top: 10px; }
+        .hex-data { background: #111; color: white; padding: 10px; display: block; border: 1px solid #222; margin: 8px 0; word-break: break-all; font-size: 0.85em; }
+        .tech-desc { color: var(--gray); font-size: 0.95em; border-top: 1px solid #333; padding-top: 5px; }
+
         .output-box { border: 1px dashed var(--neon); padding: 20px; color: var(--neon); background: rgba(0,255,65,0.03); margin-top: 20px; }
-        .copy-btn { float: right; padding: 5px 10px; font-size: 0.8em; }
+        .output-box.fail { border-color: var(--alert); color: var(--alert); }
+        .copy-btn { float: right; padding: 5px 10px; font-size: 0.8em; margin-top: -5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Method (d) Cryptographic Dashboard</h1>
+        <h1>Method (d) Security Dashboard</h1>
+        <p style="color: var(--gray);">Authenticated Encryption: MAC-then-Encrypt (MtE)</p>
 
         <div class="panel">
-            <h3>[A] SENDER PIPELINE: AUTHENTICATED ENCRYPTION</h3>
+            <h3>[A] SENDER PIPELINE</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter plaintext to encrypt..." style="width: 70%;" required>
+                <input name="msg" placeholder="Enter message to encrypt..." style="width: 70%;" required>
                 <button type="submit">EXECUTE PIPELINE</button>
             </form>
 
             {% if enc.steps %}
-            <div class="analysis-box">
+            <div style="margin-top: 25px;">
                 {% for s in enc.steps %}
-                <div class="step">
-                    <span class="label">> {{ s.label }}</span>
+                <div class="step" style="animation-delay: {{ loop.index0 * 0.5 }}s;">
+                    <span class="label">> {{ s.title }}</span>
                     <code class="hex-data">{{ s.data }}</code>
-                    <p class="tech-desc"><b>Technical Breakdown:</b> {{ s.tech }}</p>
+                    <p class="tech-desc"><b>Analysis:</b> {{ s.tech or s.desc }}</p>
                 </div>
                 {% endfor %}
             </div>
             <div class="output-box">
                 <button class="copy-btn" onclick="copyCipher()">📋 COPY CIPHERTEXT</button>
-                <strong>FINAL SECURE PACKAGE (BASE64):</strong><br>
+                <strong>SECURE PACKAGE (BASE64):</strong><br>
                 <code id="cipherText">{{ enc.ct }}</code>
             </div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[B] RECEIVER VERIFICATION: INTEGRITY CHECK</h3>
+            <h3>[B] RECEIVER VERIFICATION</h3>
             <form method="POST">
-                <input name="cip" placeholder="Paste Base64 ciphertext here..." style="width: 70%;" required>
-                <button type="submit">VERIFY & DECRYPT</button>
+                <input name="cip" placeholder="Paste Base64 package here..." style="width: 70%;" required>
+                <button type="submit">COMPARE & VERIFY</button>
             </form>
 
             {% if dec.steps %}
-            <div class="analysis-box">
+            <div style="margin-top: 25px;">
                 {% for s in dec.steps %}
-                <div class="step">
-                    <span class="label">> {{ s.label }}</span>
+                <div class="step" style="border-color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }};">
+                    <span class="label" style="color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }};">> {{ s.title }}</span>
                     <code class="hex-data">{{ s.data }}</code>
-                    <p class="tech-desc">{{ s.tech }}</p>
+                    <p class="tech-desc">{{ s.desc }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -78,7 +85,7 @@
     function copyCipher() {
         const text = document.getElementById('cipherText').innerText;
         navigator.clipboard.writeText(text);
-        alert("Copied to clipboard!");
+        alert("Ciphertext copied! Now paste it in the section below.");
     }
     </script>
 </body>

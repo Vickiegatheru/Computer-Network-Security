@@ -3,48 +3,50 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 
-K = b'1234567890123456' # AES-128 Symmetric Key
+# Shared Security Parameters
+K = b'1234567890123456' # AES-128 Key
 S = b'secret_salt_123'  # Shared Secret 'S'
 
 def encrypt_m4(message):
     steps = []
     m_bytes = message.encode()
     
-    # STEP 1: SALTING
+    # 1. SALTING (M || S)
     salted = m_bytes + S
     steps.append({
-        'label': '1. DATA SALTING (M || S)',
+        'title': '1. DATA SALTING (M || S)',
         'data': salted.hex(),
-        'tech': f"Technical: We perform a byte-level concatenation of the message '{message}' and the secret salt '{S.decode()}'. This ensures 'Keyed Hashing', where an attacker cannot reproduce the integrity tag even if they know the original message, because they lack the secret salt 'S'."
+        'desc': f"The message '{message}' is concatenated with secret salt '{S.decode()}'. This binds the identity (Salt) to the data (M) before hashing."
     })
     
-    # STEP 2: SHA-256 HASH GENERATION
+    # 2. SHA-256 HASH GENERATION
     h_obj = hashlib.sha256(salted)
     h_digest = h_obj.digest()
     steps.append({
-        'label': '2. SHA-256 MAC GENERATION',
+        'title': '2. SHA-256 MAC GENERATION',
         'data': h_obj.hexdigest(),
-        'tech': "Technical: The salted message is processed through 64 rounds of compression. Using SHA-256 ensures 'Collision Resistance' (no two messages yield the same hash) and the 'Avalanche Effect' (changing one bit of input flips roughly 50% of the output bits), providing a unique digital fingerprint."
+        'desc': "A 256-bit unique digital fingerprint is created. SHA-256 is used here for its high collision resistance and avalanche effect properties."
     })
     
-    # STEP 3: ENCAPSULATION
+    # 3. ENCAPSULATION [M || H]
     payload = m_bytes + h_digest
     steps.append({
-        'label': '3. BINDING [MESSAGE || HASH]',
+        'title': '3. PAYLOAD BINDING [M || H]',
         'data': payload.hex(),
-        'tech': f"Technical: We bind the {len(m_bytes)}-byte message and the 32-byte hash into a single continuous payload. This follows the Method (d) architecture where the integrity proof is physically attached to the data it protects before encryption begins."
+        'desc': f"Following Method (d), we bind the {len(m_bytes)}B message and the 32B hash tag into a single payload for encryption."
     })
     
-    # STEP 4: AES-128-CBC ENCRYPTION
+    # 4. AES-128-CBC ENCRYPTION
     iv = os.urandom(16)
     padder = padding.PKCS7(128).padder()
     padded = padder.update(payload) + padder.finalize()
     cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
     ct = cipher.encryptor().update(padded) + cipher.encryptor().finalize()
+    
     steps.append({
-        'label': '4. AES-128-CBC ENCRYPTION',
-        'data': f"IV: {iv.hex()} | CT: {ct.hex()[:64]}...",
-        'tech': f"Technical: The payload is encrypted using the Advanced Encryption Standard (AES). CBC mode XORs each block with the previous one, and the random IV ({iv.hex()[:8]}) ensures 'Semantic Security'—identical messages will look completely different every time they are encrypted."
+        'title': '4. AES-128-CBC ENCRYPTION',
+        'data': f"IV: {iv.hex()} | CT: {ct.hex()[:48]}...",
+        'desc': f"The package is hidden using AES. Random IV {iv.hex()[:8]} ensures identical messages result in totally unique ciphertexts."
     })
     
     return base64.b64encode(iv + ct).decode(), steps
@@ -62,9 +64,9 @@ def decrypt_m4(b64_data):
         h_calc = hashlib.sha256(m + S).digest()
         
         steps = [
-            {'label': 'RECOVERED HASH (FROM PACKAGE)', 'data': h_received.hex(), 'tech': 'This is the original hash that was hidden inside the AES envelope.'},
-            {'label': 'CALCULATED HASH (FROM MESSAGE)', 'data': h_calc.hex(), 'tech': 'This was generated locally from the decrypted message to check for tampering.'}
+            {'title': 'RECEIVED HASH', 'data': h_received.hex(), 'desc': 'The 32-byte integrity tag extracted from the decrypted envelope.'},
+            {'title': 'CALCULATED HASH', 'data': h_calc.hex(), 'desc': 'The hash re-computed from the decrypted message and secret salt S.'}
         ]
         return m.decode(), (h_received == h_calc), steps
     except:
-        return "ERROR", False, [{'label': 'CRITICAL', 'data': 'FAIL', 'tech': 'Package corrupted or invalid.'}]
+        return "ERROR", False, [{'title': 'CRITICAL', 'data': 'FAIL', 'desc': 'Package corrupted or invalid ciphertext.'}]
