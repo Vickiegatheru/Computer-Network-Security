@@ -2,23 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Method (d) Hash Comparison UI</title>
+    <title>Method (d) Security Dashboard</title>
     <style>
-        :root { --neon: #00ff41; --bg: #050505; --gray: #888; --alert: #ff3131; }
-        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 25px; }
+        :root { --neon: #00ff41; --bg: #050505; --gray: #999; --alert: #ff3131; }
+        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 25px; line-height: 1.6; }
         .container { max-width: 1100px; margin: auto; }
         .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 30px; border-radius: 4px; }
-        h3 { color: var(--neon); text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h1, h3 { color: var(--neon); text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
         input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; margin-top: 10px; }
         button:hover { background: var(--neon); color: black; cursor: pointer; font-weight: bold; }
-        .hex-box { background: #111; color: white; padding: 10px; display: block; border: 1px solid #222; margin: 8px 0; word-break: break-all; font-size: 0.85em; }
-        
-        /* Comparison Styling */
-        .comparison-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 20px 0; }
-        .hash-match { color: var(--neon); font-weight: bold; border-left: 4px solid var(--neon); padding-left: 15px; }
-        .hash-mismatch { color: var(--alert); font-weight: bold; border-left: 4px solid var(--alert); padding-left: 15px; }
-        .output-box { border: 1px dashed var(--neon); padding: 20px; background: rgba(0,255,65,0.03); margin-top: 20px; }
-        .output-box.fail { border-color: var(--alert); color: var(--alert); }
+        .analysis-box { margin: 20px 0; border-left: 3px solid var(--neon); padding-left: 20px; }
+        .step { margin-bottom: 30px; }
+        .label { color: var(--neon); font-weight: bold; font-size: 1.1em; display: block; }
+        .hex-data { background: #111; color: white; padding: 12px; display: block; border: 1px solid #222; margin: 10px 0; word-break: break-all; font-size: 0.85em; }
+        .tech-desc { color: var(--gray); font-size: 0.95em; border-top: 1px solid #333; padding-top: 10px; }
+        .output-box { border: 1px dashed var(--neon); padding: 20px; color: var(--neon); background: rgba(0,255,65,0.03); margin-top: 20px; }
+        .copy-btn { float: right; padding: 5px 10px; font-size: 0.8em; }
     </style>
 </head>
 <body>
@@ -26,47 +25,61 @@
         <h1>Method (d) Cryptographic Dashboard</h1>
 
         <div class="panel">
-            <h3>[A] SENDER PIPELINE</h3>
+            <h3>[A] SENDER PIPELINE: AUTHENTICATED ENCRYPTION</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter plaintext..." style="width: 70%;" required>
-                <button type="submit">GENERATE PACKAGE</button>
+                <input name="msg" placeholder="Enter plaintext to encrypt..." style="width: 70%;" required>
+                <button type="submit">EXECUTE PIPELINE</button>
             </form>
-            {% if enc.ct %}
-            <div style="margin-top: 20px;">
-                <strong>ORIGINAL HASH:</strong>
-                <code class="hex-box">{{ enc.steps[1].data }}</code>
-                <div class="output-box">
-                    <strong>SECURE BASE64:</strong><br><code>{{ enc.ct }}</code>
+
+            {% if enc.steps %}
+            <div class="analysis-box">
+                {% for s in enc.steps %}
+                <div class="step">
+                    <span class="label">> {{ s.label }}</span>
+                    <code class="hex-data">{{ s.data }}</code>
+                    <p class="tech-desc"><b>Technical Breakdown:</b> {{ s.tech }}</p>
                 </div>
+                {% endfor %}
+            </div>
+            <div class="output-box">
+                <button class="copy-btn" onclick="copyCipher()">📋 COPY CIPHERTEXT</button>
+                <strong>FINAL SECURE PACKAGE (BASE64):</strong><br>
+                <code id="cipherText">{{ enc.ct }}</code>
             </div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[B] RECEIVER VERIFICATION</h3>
+            <h3>[B] RECEIVER VERIFICATION: INTEGRITY CHECK</h3>
             <form method="POST">
-                <input name="cip" placeholder="Paste Base64 here..." style="width: 70%;" required>
-                <button type="submit">COMPARE HASHES</button>
+                <input name="cip" placeholder="Paste Base64 ciphertext here..." style="width: 70%;" required>
+                <button type="submit">VERIFY & DECRYPT</button>
             </form>
 
             {% if dec.steps %}
-            <div class="comparison-grid">
-                <div class="{{ 'hash-match' if dec.valid else 'hash-mismatch' }}">
-                    <p>1. {{ dec.steps[0].label }}:</p>
-                    <code class="hex-box">{{ dec.steps[0].data }}</code>
+            <div class="analysis-box">
+                {% for s in dec.steps %}
+                <div class="step">
+                    <span class="label">> {{ s.label }}</span>
+                    <code class="hex-data">{{ s.data }}</code>
+                    <p class="tech-desc">{{ s.tech }}</p>
                 </div>
-                <div class="{{ 'hash-match' if dec.valid else 'hash-mismatch' }}">
-                    <p>2. {{ dec.steps[1].label }}:</p>
-                    <code class="hex-box">{{ dec.steps[1].data }}</code>
-                </div>
+                {% endfor %}
             </div>
-
             <div class="output-box {{ 'fail' if not dec.valid }}">
-                <strong>VERIFICATION RESULT:</strong> {{ "SUCCESS - Hashes Match ✅" if dec.valid else "FAILURE - Integrity Breach ❌" }} <br>
-                <strong>DECRYPTED MESSAGE:</strong> {{ dec.msg }}
+                <strong>DECRYPTED MESSAGE:</strong> {{ dec.msg }} <br>
+                <strong>STATUS:</strong> {{ "AUTHENTICATED ✅" if dec.valid else "COMPROMISED ❌" }}
             </div>
             {% endif %}
         </div>
     </div>
+
+    <script>
+    function copyCipher() {
+        const text = document.getElementById('cipherText').innerText;
+        navigator.clipboard.writeText(text);
+        alert("Copied to clipboard!");
+    }
+    </script>
 </body>
 </html>
