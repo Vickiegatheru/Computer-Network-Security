@@ -2,74 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Method (d) Advanced Analyzer</title>
+    <title>Method (d) Advanced Protocol Analysis</title>
     <style>
         :root { --neon: #00ff41; --bg: #050505; --gray: #999; }
-        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 30px; }
+        body { background: var(--bg); color: #ddd; font-family: 'Courier New', monospace; padding: 30px; line-height: 1.6; }
         .container { max-width: 1100px; margin: auto; }
-        .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 25px; }
+        .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 30px; border-radius: 4px; }
+        
         h1, h3 { color: var(--neon); text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        
-        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; }
-        button:hover { background: var(--neon); color: #000; cursor: pointer; }
+        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; margin-top: 10px; }
+        button:hover { background: var(--neon); color: black; cursor: pointer; font-weight: bold; }
 
-        .analysis-box { background: #000; border-left: 3px solid var(--neon); padding: 20px; margin: 20px 0; }
-        .step { margin-bottom: 25px; }
-        .step-head { color: var(--neon); font-weight: bold; font-size: 1.1em; }
-        .step-hex { color: white; word-break: break-all; font-size: 0.9em; background: #111; padding: 10px; display: block; border: 1px solid #222; margin: 8px 0; }
-        .step-technical { color: var(--gray); font-size: 0.9em; line-height: 1.4; border-top: 1px solid #222; padding-top: 5px; }
-        
-        .output { border: 1px dashed var(--neon); padding: 20px; color: var(--neon); background: rgba(0, 255, 65, 0.05); }
-        .fail { border-color: #ff3131; color: #ff3131; }
+        .analysis-container { margin: 20px 0; border-left: 3px solid var(--neon); padding-left: 20px; }
+        .step-block { margin-bottom: 25px; }
+        .label { color: var(--neon); font-weight: bold; font-size: 1.1em; display: block; }
+        .hex-data { background: #111; color: white; padding: 10px; display: block; border: 1px solid #222; margin: 8px 0; word-break: break-all; font-size: 0.9em; }
+        .tech-desc { color: var(--gray); font-size: 0.9em; padding-left: 5px; border-left: 1px solid #444; }
+
+        .output-box { border: 1px dashed var(--neon); padding: 20px; color: var(--neon); background: rgba(0,255,65,0.03); margin-top: 20px; }
+        .alert { border-color: #ff3131; color: #ff3131; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Method (d) Technical Dashboard</h1>
-        
+        <h1>Method (d) Cryptographic Dashboard</h1>
+
         <div class="panel">
-            <h3>[A] SENDER: Encrypt & Authenticate</h3>
+            <h3>[A] SENDER PIPELINE (MAC-then-Encrypt)</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter plaintext message..." style="width: 75%;" required>
-                <button type="submit">PROCESS PIPELINE</button>
+                <input name="msg" placeholder="Enter plaintext message..." style="width: 70%;" required>
+                <button type="submit">EXECUTE METHOD (D)</button>
             </form>
 
             {% if enc.steps %}
-            <div class="analysis-box">
+            <div class="analysis-container">
                 {% for s in enc.steps %}
-                <div class="step">
-                    <span class="step-head">{{ s.title }}</span>
-                    <span class="step-hex">{{ s.data }}</span>
-                    <p class="step-technical">{{ s.desc }}</p>
+                <div class="step-block">
+                    <span class="label">> {{ s.label }}</span>
+                    <code class="hex-data">{{ s.data }}</code>
+                    <p class="tech-desc"><b>Technical Analysis:</b> {{ s.tech }}</p>
                 </div>
                 {% endfor %}
             </div>
-            <div class="output">
-                <strong>FINAL BASE64 PACKAGE:</strong><br>{{ enc.ct }}
+            <div class="output-box">
+                <strong>SECURE BASE64 PACKAGE:</strong><br>{{ enc.ct }}
             </div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[B] RECEIVER: Verify & Decrypt</h3>
+            <h3>[B] RECEIVER VERIFICATION (Decapsulation)</h3>
             <form method="POST">
-                <input name="cip" placeholder="Paste Base64 ciphertext..." style="width: 75%;" required>
+                <input name="cip" placeholder="Paste Base64 package..." style="width: 70%;" required>
                 <button type="submit">VERIFY INTEGRITY</button>
             </form>
 
             {% if dec.steps %}
-            <div class="analysis-box">
+            <div class="analysis-container">
                 {% for s in dec.steps %}
-                <div class="step">
-                    <span class="step-head">{{ s.title }}</span>
-                    <span class="step-hex">{{ s.data }}</span>
-                    <p class="step-technical">{{ s.desc }}</p>
+                <div class="step-block">
+                    <span class="label">> {{ s.label }}</span>
+                    <code class="hex-data">{{ s.data }}</code>
+                    <p class="tech-desc">{{ s.tech }}</p>
                 </div>
                 {% endfor %}
             </div>
-            <div class="output {{ 'fail' if not dec.valid }}">
-                <strong>DECRYPTED RESULT:</strong> {{ dec.msg }} <br>
-                <strong>INTEGRITY STATUS:</strong> {{ "AUTHENTICATED ✅" if dec.valid else "COMPROMISED ❌" }}
+            <div class="output-box {{ 'alert' if not dec.valid }}">
+                <strong>DECRYPTED MESSAGE:</strong> {{ dec.msg }} <br>
+                <strong>STATUS:</strong> {{ "AUTHENTICATED - Integrity Verified ✅" if dec.valid else "CRITICAL - Data Tampered ❌" }}
             </div>
             {% endif %}
         </div>

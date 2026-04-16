@@ -3,58 +3,58 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 
+# Security Parameters
 K = b'1234567890123456' # AES-128 Key
-S = b'secret_salt_123'  # Authentication Secret
+S = b'secret_salt_123'  # Secret Salt 'S'
 
 def encrypt_m4(message):
     steps = []
     m_bytes = message.encode()
     
-    # STEP 1: SALTING
+    # --- STEP 1: DATA SALTING ---
     salted = m_bytes + S
     steps.append({
-        'title': '1. DATA SALTING (M || S)',
+        'label': 'SALTED DATA',
         'data': salted.hex(),
-        'desc': f"The message '{message}' ({len(m_bytes)} bytes) is merged with secret salt '{S.decode()}'. This ensures that even if an attacker knows the plaintext, they cannot recreate the hash without the secret key 'S'."
+        'tech': f"The plaintext '{message}' is concatenated with the shared secret 'S'. In memory, this creates a new byte-array: {m_bytes.hex()} + {S.hex()}. This prevents pre-computation (Rainbow Table) attacks."
     })
     
-    # STEP 2: HASHING
+    # --- STEP 2: SHA-256 HASHING ---
     h_obj = hashlib.sha256(salted)
     h_digest = h_obj.digest()
     steps.append({
-        'title': '2. SHA-256 MAC GENERATION',
+        'label': 'SHA-256 FULL HASH',
         'data': h_obj.hexdigest(),
-        'desc': f"A 256-bit unique 'digital fingerprint' is generated. SHA-256 uses 64 rounds of logical operations to ensure that changing even one bit in '{message}' results in a completely different 64-character hex string."
+        'tech': f"The compression function processes the {len(salted)} bytes through 64 rounds of Bitwise XORs and Rotations. The result is a fixed 256-bit unique 'digital fingerprint' that proves the data hasn't been touched."
     })
     
-    # STEP 3: ENCAPSULATION
+    # --- STEP 3: ENCAPSULATION ---
     payload = m_bytes + h_digest
     steps.append({
-        'title': '3. PAYLOAD BINDING [M || H]',
+        'label': 'ENCAPSULATED PAYLOAD',
         'data': payload.hex(),
-        'desc': f"The original message and the 32-byte hash are glued together. Total payload: {len(payload)} bytes. This creates the 'Authenticated Package' required for Method (d)."
+        'tech': f"Following Method (d), we bind the message and hash together. The first {len(m_bytes)} bytes are your data; the final 32 bytes are the integrity tag. Total package size: {len(payload)} bytes."
     })
     
-    # STEP 4: ENCRYPTION
+    # --- STEP 4: AES-128-CBC ENCRYPTION ---
     iv = os.urandom(16)
     padder = padding.PKCS7(128).padder()
     padded = padder.update(payload) + padder.finalize()
     cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
     ct = cipher.encryptor().update(padded) + cipher.encryptor().finalize()
+    
     steps.append({
-        'title': '4. AES-128-CBC ENCRYPTION',
-        'data': f"IV: {iv.hex()} | Ciphertext: {ct.hex()[:40]}...",
-        'desc': f"The entire package is wrapped in an AES envelope. CBC mode XORs each block with the previous one. Using random IV {iv.hex()[:8]} ensures that the same message encrypted twice looks totally different."
+        'label': 'AES-CBC CIPHERTEXT',
+        'data': f"IV: {iv.hex()} | CT: {ct.hex()}",
+        'tech': f"Confidentiality layer: Each 16-byte block is XORed with the previous ciphertext block. The IV ({iv.hex()[:8]}...) ensures that even if you send '{message}' again, the ciphertext will look completely different."
     })
     
     return base64.b64encode(iv + ct).decode(), steps
 
 def decrypt_m4(b64_data):
-    steps = []
     try:
         data = base64.b64decode(b64_data)
         iv, ct = data[:16], data[16:]
-        
         cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
         pt = cipher.decryptor().update(ct) + cipher.decryptor().finalize()
         unpadder = padding.PKCS7(128).unpadder()
@@ -64,10 +64,9 @@ def decrypt_m4(b64_data):
         h_calc = hashlib.sha256(m + S).digest()
         
         steps = [
-            {'title': 'EXTRACTED HASH', 'data': h_received.hex(), 'desc': 'The 32-byte hash recovered from the decrypted envelope.'},
-            {'title': 'CALCULATED HASH', 'data': h_calc.hex(), 'desc': 'The hash re-computed locally using the decrypted message and the secret salt.'}
+            {'label': 'RECOVERED HASH', 'data': h_received.hex(), 'tech': 'This 32-byte tag was extracted from the decrypted AES envelope.'},
+            {'label': 'COMPUTED HASH', 'data': h_calc.hex(), 'tech': 'This was generated locally from the decrypted message and secret salt S.'}
         ]
-        
         return m.decode(), (h_received == h_calc), steps
     except:
-        return "ERROR", False, [{'title': 'CRITICAL', 'data': 'FAIL', 'desc': 'Package corrupted or invalid.'}]
+        return "ERROR", False, []
