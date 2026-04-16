@@ -9,12 +9,12 @@ def home():
     dec_data = {}
     
     if request.method == 'POST':
-        # If Sender form is submitted
+        # Logic for the SENDER form
         if 'msg' in request.form:
             ct, steps = encrypt_m4(request.form['msg'])
             enc_data = {'ct': ct, 'steps': steps}
         
-        # If Receiver form is submitted
+        # Logic for the RECEIVER form
         elif 'cip' in request.form:
             msg, valid, steps = decrypt_m4(request.form['cip'])
             dec_data = {'msg': msg, 'valid': valid, 'steps': steps}
