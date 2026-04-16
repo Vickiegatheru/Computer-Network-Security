@@ -2,87 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Method (d) Security Visualizer</title>
+    <title>Method (d) Security Dashboard</title>
     <style>
-        :root { --neon: #00ff41; --dim: #003b11; --bg: #050505; --alert: #ff3131; }
-        
-        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 20px; line-height: 1.5; }
+        :root { --neon: #00ff41; --bg: #0a0a0a; --red: #ff3131; }
+        body { background: var(--bg); color: #ddd; font-family: 'Courier New', monospace; padding: 30px; }
         .container { max-width: 900px; margin: auto; }
-        
-        h1, h3 { color: var(--neon); text-transform: uppercase; letter-spacing: 2px; }
-        .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 30px; border-radius: 4px; box-shadow: 0 0 20px rgba(0,255,65,0.05); }
-        
-        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; margin-top: 10px; }
-        button:hover { background: var(--neon); color: #000; cursor: pointer; font-weight: bold; }
+        .panel { background: #111; border: 1px solid #333; padding: 25px; margin-bottom: 25px; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h3 { color: var(--neon); margin-top: 0; }
+        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; }
+        button:hover { background: var(--neon); color: black; cursor: pointer; font-weight: bold; }
         
         /* Typewriter Animation */
-        .log-box { background: #000; border-left: 3px solid var(--neon); padding: 15px; margin: 20px 0; font-size: 0.9em; }
-        .tw-line { overflow: hidden; white-space: nowrap; border-right: 2px solid var(--neon); width: 0; animation: typing 1.5s steps(40, end) forwards, blink 0.8s infinite; margin-bottom: 8px; }
-        
+        .log-box { background: #000; border-left: 3px solid var(--neon); padding: 15px; margin: 20px 0; font-size: 0.85em; }
+        .tw-line { overflow: hidden; white-space: nowrap; border-right: 2px solid var(--neon); width: 0; animation: typing 1.5s steps(40, end) forwards, blink 0.8s infinite; margin-bottom: 8px; color: var(--neon); }
         @keyframes typing { from { width: 0 } to { width: 100% } }
         @keyframes blink { 50% { border-color: transparent } }
         
-        .delay-1 { animation-delay: 0.5s; }
-        .delay-2 { animation-delay: 2s; }
-        .delay-3 { animation-delay: 3.5s; }
-        .delay-4 { animation-delay: 5s; }
+        .delay-0 { animation-delay: 0s; }
+        .delay-1 { animation-delay: 1.5s; }
+        .delay-2 { animation-delay: 3s; }
+        .delay-3 { animation-delay: 4.5s; }
 
-        .result-box { border: 1px dashed var(--neon); padding: 15px; color: var(--neon); word-break: break-all; margin-top: 15px; background: rgba(0,255,65,0.02); }
-        .tamper-alert { border-color: var(--alert); color: var(--alert); animation: shake 0.5s infinite; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-
-        .explanation { font-size: 0.8em; color: #666; margin-top: 15px; border-top: 1px solid #222; padding-top: 10px; }
-        b { color: var(--neon); }
+        .res { border: 1px dashed var(--neon); padding: 15px; word-break: break-all; margin-top: 15px; color: var(--neon); background: rgba(0,255,65,0.02); }
+        .error { border-color: var(--red); color: var(--red); }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Secure Tunnel Dashboard</h1>
-        <p style="color: #666;">Method (d): E<sub>K</sub> [ M || H( M || S ) ]</p>
+        <h1 style="color: var(--neon);">SYSTEM: AUTHENTICATED ENCRYPTION</h1>
+        <p style="color: #666;">Protocol: Method (d) - Hash-then-Encrypt</p>
 
         <div class="panel">
-            <h3>[A] SENDER INTERFACE</h3>
+            <h3>[A] SENDER ENGINE</h3>
             <form method="POST">
-                <input name="msg" placeholder="Type secret message..." style="width: 75%;" required>
-                <button type="submit">ENCRYPT & SEAL</button>
+                <input name="msg" placeholder="Enter message..." style="width: 70%;" required>
+                <button type="submit">GENERATE PACKAGE</button>
             </form>
-
             {% if enc.ct %}
             <div class="log-box">
-                <div class="tw-line delay-1">> STEP 1: Appending Secret Salt (S) to Message (M)</div>
-                <div class="tw-line delay-2">> STEP 2: Generating SHA-256 Authentication Hash...</div>
-                <div class="tw-line delay-3">> STEP 3: Concatenating [Message + Hash] Tag</div>
-                <div class="tw-line delay-4">> STEP 4: Encapsulating in AES-128-CBC Envelope</div>
+                {% for step in enc.steps %}
+                <div class="tw-line delay-{{ loop.index0 }}">> {{ step }}</div>
+                {% endfor %}
             </div>
-            <div class="result-box">
-                <strong>SECURE CIPHERTEXT:</strong><br>{{ enc.ct }}
-            </div>
-            <div class="explanation">
-                <b>The Hashing Logic:</b> By hashing <i>before</i> encrypting, we create a "tamper-evident seal" that is itself hidden by the encryption.
-            </div>
+            <div class="res"><strong>FINAL CIPHERTEXT:</strong><br>{{ enc.ct }}</div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[B] RECEIVER INTERFACE</h3>
+            <h3>[B] RECEIVER ENGINE</h3>
             <form method="POST">
-                <input name="cip" placeholder="Paste ciphertext here..." style="width: 75%;" required>
-                <button type="submit">DECRYPT & VERIFY</button>
+                <input name="cip" placeholder="Paste ciphertext..." style="width: 70%;" required>
+                <button type="submit">VERIFY & DECRYPT</button>
             </form>
-
-            {% if dec.msg %}
+            {% if dec.steps %}
             <div class="log-box">
-                <div class="tw-line delay-1">> STEP 1: Stripping AES-128 Encryption Layer...</div>
-                <div class="tw-line delay-2">> STEP 2: Extracting Message and 32-byte Hash Tag</div>
-                <div class="tw-line delay-3">> STEP 3: Re-calculating Hash for Integrity Check...</div>
-                <div class="tw-line delay-4">> STATUS: {{ "AUTHENTICATED" if dec.valid else "INTEGRITY BREACH DETECTED" }}</div>
+                {% for step in dec.steps %}
+                <div class="tw-line delay-{{ loop.index0 }}">> {{ step }}</div>
+                {% endfor %}
             </div>
-            <div class="result-box {{ 'tamper-alert' if not dec.valid }}">
-                <strong>OUTPUT:</strong> {{ dec.msg }} <br>
-                <strong>VERIFICATION:</strong> {{ "SUCCESS ✅" if dec.valid else "FAILED ❌" }}
-            </div>
-            <div class="explanation">
-                <b>The Verification Logic:</b> If $H_{calculated} \neq H_{received}$, the system knows the data was modified during transit, even if the attacker couldn't read the message.
+            <div class="res {{ 'error' if not dec.valid }}">
+                <strong>RESULT:</strong> {{ dec.msg }} <br>
+                <strong>INTEGRITY:</strong> {{ "AUTHENTICATED" if dec.valid else "COMPROMISED" }}
             </div>
             {% endif %}
         </div>
