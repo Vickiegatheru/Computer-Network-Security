@@ -112,6 +112,38 @@
         navigator.clipboard.writeText(text);
         alert("Ciphertext copied! Now paste it in the section below.");
     }
+
+    // Handle receiver verification form submission without page refresh
+    document.addEventListener('DOMContentLoaded', function() {
+        const receiverForm = document.querySelector('form[action=""], form:has(input[name="cip"])');
+        if (receiverForm) {
+            receiverForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const scrollPos = window.scrollY;
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse the response and update only the receiver section
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+                    
+                    // Replace the entire page content with new content
+                    document.documentElement.innerHTML = newDoc.documentElement.innerHTML;
+                    
+                    // Restore scroll position
+                    window.scrollY = scrollPos;
+                    setTimeout(() => window.scrollTo(0, scrollPos), 0);
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        }
+    });
     </script>
 </body>
 </html>
