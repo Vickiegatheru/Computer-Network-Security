@@ -2,94 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Method (d) Technical Dashboard</title>
+    <title>Method (d) Advanced Analyzer</title>
     <style>
-        :root { --neon: #00ff41; --bg: #050505; --gray: #888; --alert: #ff3131; }
-        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 20px; font-size: 14px; }
+        :root { --neon: #00ff41; --bg: #050505; --gray: #999; }
+        body { background: var(--bg); color: #ccc; font-family: 'Courier New', monospace; padding: 30px; }
         .container { max-width: 1100px; margin: auto; }
-        .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 25px; border-radius: 4px; }
-        h1, h2, h3 { color: var(--neon); text-transform: uppercase; margin-top: 0; }
+        .panel { background: #0f0f0f; border: 1px solid #222; padding: 25px; margin-bottom: 25px; }
+        h1, h3 { color: var(--neon); text-transform: uppercase; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
         
-        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; margin-top: 10px; }
-        button:hover { background: var(--neon); color: #000; cursor: pointer; font-weight: bold; }
+        input, button { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 12px; font-family: inherit; }
+        button:hover { background: var(--neon); color: #000; cursor: pointer; }
 
-        .log-box { background: #000; border-left: 3px solid var(--neon); padding: 15px; margin: 20px 0; }
-        .step { margin-bottom: 20px; }
-        .step-title { color: var(--neon); font-weight: bold; display: block; margin-bottom: 4px; }
-        .step-data { color: white; word-break: break-all; font-size: 0.9em; background: #111; padding: 8px; display: block; border: 1px solid #222; }
-        .step-desc { color: var(--gray); font-size: 0.85em; margin-top: 5px; display: block; font-style: italic; }
-
-        .res-out { border: 1px dashed var(--neon); padding: 15px; color: var(--neon); margin-top: 15px; background: rgba(0, 255, 65, 0.03); }
-        .bad { border-color: var(--alert); color: var(--alert); }
+        .analysis-box { background: #000; border-left: 3px solid var(--neon); padding: 20px; margin: 20px 0; }
+        .step { margin-bottom: 25px; }
+        .step-head { color: var(--neon); font-weight: bold; font-size: 1.1em; }
+        .step-hex { color: white; word-break: break-all; font-size: 0.9em; background: #111; padding: 10px; display: block; border: 1px solid #222; margin: 8px 0; }
+        .step-technical { color: var(--gray); font-size: 0.9em; line-height: 1.4; border-top: 1px solid #222; padding-top: 5px; }
+        
+        .output { border: 1px dashed var(--neon); padding: 20px; color: var(--neon); background: rgba(0, 255, 65, 0.05); }
+        .fail { border-color: #ff3131; color: #ff3131; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Method (d) Protocol Visualizer</h1>
-        <p style="color: #666;">C = E<sub>K</sub> [ M || H( M || S ) ]</p>
+        <h1>Method (d) Technical Dashboard</h1>
         
         <div class="panel">
-            <h3>[1] SENDER: AUTHENTICATED ENCRYPTION</h3>
+            <h3>[A] SENDER: Encrypt & Authenticate</h3>
             <form method="POST">
-                <input name="msg" placeholder="Enter message to encrypt..." style="width: 75%;" required>
+                <input name="msg" placeholder="Enter plaintext message..." style="width: 75%;" required>
                 <button type="submit">PROCESS PIPELINE</button>
             </form>
 
             {% if enc.steps %}
-            <div class="log-box">
+            <div class="analysis-box">
+                {% for s in enc.steps %}
                 <div class="step">
-                    <span class="step-title">STEP 1: SALTING (M + S)</span>
-                    <span class="step-data">> {{ enc.steps[0] }}</span>
-                    <span class="step-desc">Technical: We append secret salt 'S' to message 'M'. This ensures the resulting hash is unique to the protocol and resistant to dictionary attacks.</span>
+                    <span class="step-head">{{ s.title }}</span>
+                    <span class="step-hex">{{ s.data }}</span>
+                    <p class="step-technical">{{ s.desc }}</p>
                 </div>
-
-                <div class="step">
-                    <span class="step-title">STEP 2: SHA-256 MAC GENERATION</span>
-                    <span class="step-data">> {{ enc.steps[1] }}</span>
-                    <span class="step-desc">Technical: The SHA-256 algorithm compresses the salted message into a 256-bit unique fingerprint. If a single bit in the message changes, this entire hash changes.</span>
-                </div>
-
-                <div class="step">
-                    <span class="step-title">STEP 3: BINDING [M || H]</span>
-                    <span class="step-data">> {{ enc.steps[2] }}</span>
-                    <span class="step-desc">Technical: This is the encapsulation stage. We glue the message and its integrity proof (the hash) together into a single byte-array.</span>
-                </div>
-
-                <div class="step">
-                    <span class="step-title">STEP 4: AES-128-CBC CONFIDENTIALITY</span>
-                    <span class="step-data">> {{ enc.steps[3] }}</span>
-                    <span class="step-desc">Technical: The entire package is encrypted with AES. CBC mode ensures that even identical plaintexts produce completely different ciphertexts due to the random IV.</span>
-                </div>
+                {% endfor %}
             </div>
-            <div class="res-out"><strong>FINAL SECURE PACKAGE (BASE64):</strong><br>{{ enc.ct }}</div>
+            <div class="output">
+                <strong>FINAL BASE64 PACKAGE:</strong><br>{{ enc.ct }}
+            </div>
             {% endif %}
         </div>
 
         <div class="panel">
-            <h3>[2] RECEIVER: INTEGRITY VERIFICATION</h3>
+            <h3>[B] RECEIVER: Verify & Decrypt</h3>
             <form method="POST">
-                <input name="cip" placeholder="Paste Base64 package here..." style="width: 75%;" required>
-                <button type="submit">DECRYPT & VERIFY</button>
+                <input name="cip" placeholder="Paste Base64 ciphertext..." style="width: 75%;" required>
+                <button type="submit">VERIFY INTEGRITY</button>
             </form>
 
             {% if dec.steps %}
-            <div class="log-box">
+            <div class="analysis-box">
+                {% for s in dec.steps %}
                 <div class="step">
-                    <span class="step-title">DECRYPTED HASH (RECOVERED FROM PACKAGE)</span>
-                    <span class="step-data">{{ dec.steps[0] }}</span>
+                    <span class="step-head">{{ s.title }}</span>
+                    <span class="step-hex">{{ s.data }}</span>
+                    <p class="step-technical">{{ s.desc }}</p>
                 </div>
-                <div class="step">
-                    <span class="step-title">RE-COMPUTED HASH (CALCULATED FROM MESSAGE)</span>
-                    <span class="step-data">{{ dec.steps[1] }}</span>
-                </div>
-                <div class="step">
-                    <span class="step-title">VERIFICATION STATUS</span>
-                    <span class="step-data" style="color: var(--neon);">{{ dec.steps[2] }}</span>
-                </div>
+                {% endfor %}
             </div>
-            <div class="res-out {{ 'bad' if not dec.valid }}">
-                <strong>DECRYPTED MESSAGE:</strong> {{ dec.msg }} <br>
-                <strong>INTEGRITY STATUS:</strong> {{ "SUCCESS ✅" if dec.valid else "COMPROMISED ❌" }}
+            <div class="output {{ 'fail' if not dec.valid }}">
+                <strong>DECRYPTED RESULT:</strong> {{ dec.msg }} <br>
+                <strong>INTEGRITY STATUS:</strong> {{ "AUTHENTICATED ✅" if dec.valid else "COMPROMISED ❌" }}
             </div>
             {% endif %}
         </div>
