@@ -74,6 +74,25 @@
                 </div>
                 {% endfor %}
             </div>
+            
+            <!-- COMPARISON RESULT SEGMENT -->
+            {% if dec.steps|length >= 3 %}
+            <div style="margin-top: 30px; padding: 20px; border: 2px solid {{ 'var(--neon)' if dec.valid else 'var(--alert)' }}; background: {{ 'rgba(0,255,65,0.08)' if dec.valid else 'rgba(255,49,49,0.08)' }}; border-radius: 4px;">
+                <div style="font-size: 1.2em; color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }}; font-weight: bold; margin-bottom: 15px;">
+                    🔐 VERIFICATION RESULT
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <span style="color: var(--gray); font-weight: bold;">COMPARISON STATUS:</span>
+                    <span style="color: {{ 'var(--neon)' if dec.valid else 'var(--alert)' }}; font-weight: bold; font-size: 1.1em; margin-left: 10px;">
+                        {{ "✅ HASHES MATCH - AUTHENTIC" if dec.valid else "❌ HASHES DIFFER - COMPROMISED" }}
+                    </span>
+                </div>
+                <div style="border-top: 1px solid #333; padding-top: 10px; color: var(--gray); line-height: 1.8;">
+                    {{ dec.steps[2].desc if dec.steps|length >= 3 else "Verification information unavailable." }}
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="output-box {{ 'fail' if not dec.valid }}">
                 <strong>DECRYPTED MESSAGE:</strong> {{ dec.msg }} <br>
                 <strong>STATUS:</strong> {{ "AUTHENTICATED ✅" if dec.valid else "COMPROMISED ❌" }}
