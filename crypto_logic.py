@@ -41,7 +41,8 @@ def encrypt_m4(message):
     padder = padding.PKCS7(128).padder()
     padded = padder.update(payload) + padder.finalize()
     cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
-    ct = cipher.encryptor().update(padded) + cipher.encryptor().finalize()
+    encryptor = cipher.encryptor()
+    ct = encryptor.update(padded) + encryptor.finalize()
     
     steps.append({
         'title': '4. AES-128-CBC ENCRYPTION',
@@ -56,9 +57,10 @@ def decrypt_m4(b64_data):
         data = base64.b64decode(b64_data.strip())
         iv, ct = data[:16], data[16:]
         cipher = Cipher(algorithms.AES(K), modes.CBC(iv), backend=default_backend())
-        pt = cipher.decryptor().update(ct) + cipher.decryptor().finalize()
+        decryptor = cipher.decryptor()
+        pt = decryptor.update(ct) + decryptor.finalize()
         unpadder = padding.PKCS7(128).unpadder()
-        pt = unpadder.update(pt).finalize()
+        pt = unpadder.update(pt) + unpadder.finalize()
         
         m, h_received = pt[:-32], pt[-32:]
         h_calc = hashlib.sha256(m + S).digest()
