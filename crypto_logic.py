@@ -86,17 +86,37 @@ def decrypt_m4(b64_data):
         steps = [
             {'title': 'RECEIVED HASH (from ciphertext)', 'data': h_received.hex(), 'desc': 'The 32-byte integrity tag extracted from the decrypted envelope.'},
             {'title': 'CALCULATED HASH (recomputed)', 'data': h_calc.hex(), 'desc': 'The hash re-computed from the decrypted message and secret salt S.'},
-            {
-                'title': 'HASH COMPARISON & VERIFICATION',
-                'data': 'MATCH ✅' if is_valid else 'MISMATCH ❌',
-                'desc': (
-                    'Both hashes are identical! The message has not been tampered with during transmission. '
-                    'MAC verification passed: authenticity and integrity are confirmed.' if is_valid
-                    else 'The hashes do NOT match! This indicates the message was corrupted, tampered with, or decrypted with wrong key/salt. '
-                    'The package is COMPROMISED and cannot be trusted.'
-                )
-            }
         ]
+        
+        # Add man-in-the-middle tampering simulation BEFORE verification
+        if not is_valid:
+            tampered_m = m + b' [TAMPERED]'
+            h_attacker_attempt = hashlib.sha256(tampered_m + S).digest()
+            steps.insert(1, {
+                'title': '⚠️ MAN-IN-THE-MIDDLE INTERFERENCE DETECTED',
+                'data': tampered_m.decode(),
+                'desc': f"An attacker intercepted the message and modified it to: '{tampered_m.decode()}'. "
+                        f"The attacker now needs to forge a valid MAC, but they don't know the secret salt 'S'."
+            })
+            steps.insert(2, {
+                'title': '🔴 ATTACKER\'S FAILED MAC ATTEMPT',
+                'data': h_attacker_attempt.hex()[:32] + '...',
+                'desc': f"The attacker tried to recalculate the hash with their tampered message + secret salt, "
+                        f"but got a DIFFERENT hash. Original hash (first 32 chars): {h_received.hex()[:32]}... | "
+                        f"Attacker's hash: {h_attacker_attempt.hex()[:32]}... Without knowing the secret salt, "
+                        f"the attacker CANNOT forge a valid MAC. The tampering will be detected!"
+            })
+        
+        steps.append({
+            'title': 'HASH COMPARISON & VERIFICATION',
+            'data': 'MATCH ✅' if is_valid else 'MISMATCH ❌',
+            'desc': (
+                'Both hashes are identical! The message has not been tampered with during transmission. '
+                'MAC verification passed: authenticity and integrity are confirmed.' if is_valid
+                else 'The hashes do NOT match! This indicates the message was corrupted, tampered with, or decrypted with wrong key/salt. '
+                'The package is COMPROMISED and cannot be trusted.'
+            )
+        })
         return m.decode(), is_valid, steps
     except Exception as e:
         return f"ERROR: {str(e)}", False, [
